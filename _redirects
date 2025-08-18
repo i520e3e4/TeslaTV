@@ -23,7 +23,7 @@
 /service-worker.js /service-worker.js 200
 
 # 静态资源重定向
-/favicon.ico /image/logo.png 200
+/favicon.ico /image/logo.svg 200
 
 # API兼容性重定向（向后兼容）
 /api/* /proxy/:splat 301
