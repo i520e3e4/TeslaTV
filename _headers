@@ -1,0 +1,47 @@
+# Cloudflare Pages全局响应头配置
+
+# 所有页面的通用安全头
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  
+# 播放器页面特殊配置
+/player.html
+  X-Frame-Options: ALLOWALL
+  Content-Security-Policy: default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: *; media-src 'self' data: blob: *; connect-src 'self' *
+  Cross-Origin-Embedder-Policy: unsafe-none
+  Cross-Origin-Opener-Policy: unsafe-none
+  
+# 特斯拉车机优化头
+/player.html
+  X-Tesla-Safe: true
+  X-Vehicle-Safe: true
+  X-Driving-Safe: true
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+# 静态资源缓存
+/js/*
+  Cache-Control: public, max-age=86400
+  
+/css/*
+  Cache-Control: public, max-age=86400
+  
+/libs/*
+  Cache-Control: public, max-age=604800
+  
+/image/*
+  Cache-Control: public, max-age=604800
+  
+# API代理路径
+/proxy/*
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD, POST, OPTIONS
+  Access-Control-Allow-Headers: *
+  Access-Control-Max-Age: 86400
+  
+# 服务工作者
+/service-worker.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Service-Worker-Allowed: /

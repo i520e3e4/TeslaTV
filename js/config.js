@@ -13,8 +13,8 @@ const PASSWORD_CONFIG = {
 
 // 网站信息配置
 const SITE_CONFIG = {
-    name: 'LibreTV',
-    url: 'https://libretv.is-an.org',
+    name: 'TeslaTV',
+    url: 'https://teslatv.is-an.org',
     description: '免费在线视频搜索与观看平台',
     logo: 'image/logo.png',
     version: '1.0.3'
@@ -22,10 +22,153 @@ const SITE_CONFIG = {
 
 // API站点配置
 const API_SITES = {
-    testSource: {
-        api: 'https://www.example.com/api.php/provide/vod',
-        name: '空内容测试源',
-        adult: true
+    subaibai: {
+        api: 'https://api.subaibai.com/api.php/v1.vod',
+        name: '素白白影视 (主力推荐)'
+    },
+    libvio: {
+        api: 'https://www.libvio.com/api.php/v1.vod',
+        name: 'LIBVIO影视 (主力推荐)'
+    },
+    feidao: {
+        api: 'https://api.feidaozy.com/api.php/v1.vod',
+        name: '飞刀资源 (主力推荐)'
+    },
+    liangzi: {
+        api: 'https://cj.lziapi.com/api.php/v1.vod',
+        name: '量子资源 (主力推荐)'
+    },
+    wujin: {
+        api: 'https://api.wujinapi.com/api.php/v1.vod',
+        name: '无尽资源 (主力推荐)'
+    },
+    wolong: {
+        api: 'https://collect.wolongzy.cc/api.php/v1.vod',
+        name: '卧龙资源 (备用推荐)'
+    },
+    tiankong: {
+        api: 'https://api.tiankongapi.com/api.php/v1.vod',
+        name: '天空影视 (备用推荐)'
+    },
+    ikun: {
+        api: 'https://ikunzyapi.com/api.php/v1.vod',
+        name: 'iKun资源 (备用推荐)'
+    },
+    shandian: {
+        api: 'https://sdzyapi.com/api.php/v1.vod',
+        name: '闪电资源 (备用推荐)'
+    },
+    ddys: {
+        api: 'https://ddys.art/api.php/provide/vod',
+        name: '低端影视'
+    },
+    dyttzy: {
+        api: 'http://caiji.dyttzyapi.com/api.php/provide/vod',
+        name: '电影天堂资源'
+    },
+    heimuer: {
+        api: 'https://json.heimuer.xyz/api.php/provide/vod',
+        name: '黑木耳'
+    },
+    ruyi: {
+        api: 'http://cj.rycjapi.com/api.php/provide/vod',
+        name: '如意资源'
+    },
+    bfzy: {
+        api: 'https://bfzyapi.com/api.php/provide/vod',
+        name: '暴风资源'
+    },
+    tyyszy: {
+        api: 'https://tyyszy.com/api.php/provide/vod',
+        name: '天涯资源'
+    },
+    ffzy: {
+        api: 'http://ffzy5.tv/api.php/provide/vod',
+        name: '非凡影视'
+    },
+    zy360: {
+        api: 'https://360zy.com/api.php/provide/vod',
+        name: '360资源'
+    },
+    maotaizy: {
+        api: 'https://caiji.maotaizy.cc/api.php/provide/vod',
+        name: '茅台资源'
+    },
+    jisu: {
+        api: 'https://jszyapi.com/api.php/provide/vod',
+        name: '极速资源'
+    },
+    dbzy: {
+        api: 'https://dbzy.tv/api.php/provide/vod',
+        name: '豆瓣资源'
+    },
+    mozhua: {
+        api: 'https://mozhuazy.com/api.php/provide/vod',
+        name: '魔爪资源'
+    },
+    mdzy: {
+        api: 'https://www.mdzyapi.com/api.php/provide/vod',
+        name: '魔都资源'
+    },
+    zuid: {
+        api: 'https://api.zuidapi.com/api.php/provide/vod',
+        name: '最大资源'
+    },
+    yinghua: {
+        api: 'https://m3u8.apiyhzy.com/api.php/provide/vod',
+        name: '樱花资源'
+    },
+    wwzy: {
+        api: 'https://wwzy.tv/api.php/provide/vod',
+        name: '旺旺短剧'
+    },
+    xiaomaomi: {
+        api: 'https://zy.xmm.hk/api.php/provide/vod',
+        name: '小猫咪资源'
+    },
+    xinlang: {
+        api: 'https://www.xinlangzy.com/api.php/provide/vod',
+        name: '新浪资源'
+    },
+    kuaiche: {
+        api: 'http://kuaichezy.com/api.php/provide/vod',
+        name: '快车资源'
+    },
+    jinying: {
+        api: 'http://jinyingzy.com/api.php/provide/vod',
+        name: '金鹰资源'
+    },
+    taopian: {
+        api: 'https://www.taopianzy.com/api.php/provide/vod',
+        name: '淘片资源'
+    },
+    huakui: {
+        api: 'https://caiji.huakuiapi.com/inc/api.php/provide/vod',
+        name: '花魁资源'
+    },
+    ukuzy: {
+        api: 'https://ukuzy0.com/api.php/provide/vod',
+        name: 'U酷资源'
+    },
+    hongniu: {
+        api: 'https://www.hongniuzy.com/api.php/provide/vod',
+        name: '红牛资源'
+    },
+    guangsu: {
+        api: 'https://guangsuzy.com/api.php/provide/vod',
+        name: '光速资源'
+    },
+    bdyun: {
+        api: 'https://bdyunzy.com/api.php/provide/vod',
+        name: '百度云资源'
+    },
+    xiangkan: {
+        api: 'https://xiangkanzy.cc/api.php/provide/vod',
+        name: '想看资源'
+    },
+    qilin: {
+        api: 'https://www.qilinzyz.com/api.php/provide/vod',
+        name: '麒麟资源'
     }
     //ARCHIVE https://telegra.ph/APIs-08-12
 };
@@ -97,6 +240,37 @@ const ERROR_MESSAGES = {
     API_ERROR: 'API接口返回错误，请尝试更换数据源',
     PLAYER_ERROR: '播放器加载失败，请尝试其他视频源',
     UNKNOWN_ERROR: '发生未知错误，请刷新页面重试'
+};
+
+// 特斯拉车机适配配置
+const TESLA_CONFIG = {
+    enabled: true,                    // 是否启用特斯拉适配
+    forceVideoPlayback: true,         // 强制启用视频播放
+    mockGPS: true,                    // 模拟GPS静止状态
+    overrideSafety: true,             // 覆盖安全限制
+    optimizeTouch: true,              // 优化触摸交互
+    disableRestrictions: true,        // 禁用播放限制
+    customUserAgent: 'TeslaMediaBrowser/1.0', // 自定义User-Agent
+    detectionKeywords: ['tesla', 'qtcarplay', 'carplay', 'automotive', 'vehicle'], // 检测关键词
+    safetyHeaders: {
+        'X-Tesla-Safe': 'true',
+        'X-Vehicle-Safe': 'true', 
+        'X-Driving-Safe': 'true'
+    }
+};
+
+// API自动管理配置
+const API_MANAGER_CONFIG = {
+    enabled: true,                    // 是否启用API自动管理
+    updateInterval: 7 * 24 * 60 * 60 * 1000, // 更新间隔（7天）
+    qualityThreshold: 0.7,           // 质量阈值
+    maxSources: 20,                  // 最大源数量
+    testTimeout: 10000,              // 测试超时时间
+    discoveryUrls: [                 // API发现URL列表
+        'https://raw.githubusercontent.com/example/api-list/main/apis.json'
+    ],
+    storageKey: 'apiManagerData',    // 存储键名
+    backupEnabled: true              // 是否启用备份
 };
 
 // 添加进一步安全设置

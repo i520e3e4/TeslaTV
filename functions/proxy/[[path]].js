@@ -8,6 +8,8 @@
 // USER_AGENTS_JSON (例如 ["UA1", "UA2"]) - JSON 字符串数组
 // DEBUG (例如 false 或 true)
 // PASSWORD (例如 "your_password") - 鉴权密码
+// API_UPDATE_ENABLED (例如 true) - 启用API自动更新
+// TESLA_MODE_ENABLED (例如 true) - 启用特斯拉车机模式
 // --- 配置结束 ---
 
 // --- 常量 (之前在 config.js 中，现在移到这里，因为它们与代理逻辑相关) ---
@@ -49,6 +51,8 @@ export async function onRequest(context) {
     const DEBUG_ENABLED = (env.DEBUG === 'true');
     const CACHE_TTL = parseInt(env.CACHE_TTL || '86400'); // 默认 24 小时
     const MAX_RECURSION = parseInt(env.MAX_RECURSION || '5'); // 默认 5 层
+    const API_UPDATE_ENABLED = (env.API_UPDATE_ENABLED === 'true');
+    const TESLA_MODE_ENABLED = (env.TESLA_MODE_ENABLED === 'true');
     // 广告过滤已移至播放器处理，代理不再执行
     let USER_AGENTS = [ // 提供一个基础的默认值
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -71,6 +75,18 @@ export async function onRequest(context) {
 
 
     // --- 辅助函数 ---
+
+    // 检测特斯拉车机请求
+    function detectTeslaRequest(request) {
+        if (!TESLA_MODE_ENABLED) return false;
+        
+        const userAgent = request.headers.get('User-Agent') || '';
+        const teslaIndicators = ['tesla', 'qtcarplay', 'carplay', 'automotive', 'vehicle'];
+        
+        return teslaIndicators.some(indicator => 
+            userAgent.toLowerCase().includes(indicator)
+        );
+    }
 
     // 验证代理请求的鉴权
     async function validateAuth(request, env) {
@@ -171,6 +187,14 @@ export async function onRequest(context) {
         responseHeaders.set("Access-Control-Allow-Origin", "*"); // 允许任何来源访问
         responseHeaders.set("Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS"); // 允许的方法
         responseHeaders.set("Access-Control-Allow-Headers", "*"); // 允许所有请求头
+        
+        // 特斯拉车机特殊处理
+        if (detectTeslaRequest(request)) {
+            responseHeaders.set("X-Tesla-Safe", "true");
+            responseHeaders.set("X-Vehicle-Safe", "true");
+            responseHeaders.set("X-Driving-Safe", "true");
+            responseHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
+        }
 
         // 处理 CORS 预检请求 (OPTIONS) - 放在这里确保所有响应都处理
          if (request.method === "OPTIONS") {
@@ -433,10 +457,10 @@ export async function onRequest(context) {
 
         let kvNamespace = null;
         try {
-            kvNamespace = env.LIBRETV_PROXY_KV; // 从环境获取 KV 命名空间 (变量名在 Cloudflare 设置)
+            kvNamespace = env.TESLATV_PROXY_KV; // 从环境获取 KV 命名空间 (变量名在 Cloudflare 设置)
             if (!kvNamespace) throw new Error("KV 命名空间未绑定");
         } catch (e) {
-            logDebug(`KV 命名空间 'LIBRETV_PROXY_KV' 访问出错或未绑定: ${e.message}`);
+            logDebug(`KV 命名空间 'TESLATV_PROXY_KV' 访问出错或未绑定: ${e.message}`);
             kvNamespace = null; // 确保设为 null
         }
 
@@ -503,10 +527,10 @@ export async function onRequest(context) {
         const cacheKey = `proxy_raw:${targetUrl}`; // 使用原始内容的缓存键
         let kvNamespace = null;
         try {
-            kvNamespace = env.LIBRETV_PROXY_KV;
+            kvNamespace = env.TESLATV_PROXY_KV;
             if (!kvNamespace) throw new Error("KV 命名空间未绑定");
         } catch (e) {
-            logDebug(`KV 命名空间 'LIBRETV_PROXY_KV' 访问出错或未绑定: ${e.message}`);
+            logDebug(`KV 命名空间 'TESLATV_PROXY_KV' 访问出错或未绑定: ${e.message}`);
             kvNamespace = null;
         }
 

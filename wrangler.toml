@@ -1,0 +1,60 @@
+name = "teslatv"
+main = "functions/proxy/[[path]].js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+name = "teslatv-prod"
+
+[env.staging]
+name = "teslatv-staging"
+
+# KV命名空间配置
+[[kv_namespaces]]
+binding = "TESLATV_PROXY_KV"
+preview_id = "your-preview-kv-namespace-id"
+id = "your-production-kv-namespace-id"
+
+# 环境变量配置
+[vars]
+DEBUG = "false"
+CACHE_TTL = "3600"
+MAX_RECURSION = "5"
+TESLA_MODE_ENABLED = "true"
+API_UPDATE_ENABLED = "true"
+
+# 生产环境变量
+[env.production.vars]
+DEBUG = "false"
+CACHE_TTL = "7200"
+
+# 测试环境变量
+[env.staging.vars]
+DEBUG = "true"
+CACHE_TTL = "1800"
+
+# 路由配置
+[[routes]]
+pattern = "teslatv.example.com/*"
+zone_name = "example.com"
+
+# 自定义域名配置（可选）
+# [[routes]]
+# pattern = "your-domain.com/*"
+# zone_name = "your-domain.com"
+
+# 构建配置
+[build]
+command = "echo 'No build step required'"
+
+# 部署配置
+[triggers]
+crons = []
+
+# 资源限制
+[limits]
+cpu_ms = 50
+
+# 兼容性设置
+[compatibility_flags]
+nodejs_compat = true

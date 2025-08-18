@@ -218,7 +218,7 @@ function initializePageContent() {
     }
 
     // 设置页面标题
-    document.title = currentVideoTitle + ' - LibreTV播放器';
+    document.title = currentVideoTitle + ' - TeslaTV播放器';
     document.getElementById('videoTitle').textContent = currentVideoTitle;
 
     // 初始化播放器
@@ -402,6 +402,13 @@ function initPlayer(videoUrl) {
         return
     }
 
+    // 特斯拉车机适配检查
+    if (window.teslaAdapter && window.teslaAdapter.isTesla) {
+        console.log('特斯拉车机模式：优化视频播放设置');
+        // 强制启用视频播放功能
+        window.teslaAdapter.forceEnableVideo();
+    }
+
     // 销毁旧实例
     if (art) {
         art.destroy();
@@ -437,6 +444,29 @@ function initPlayer(videoUrl) {
         liveDurationInfinity: false
     };
 
+    // 特斯拉车机优化配置
+    const isTesla = window.teslaAdapter && window.teslaAdapter.isTesla;
+    const teslaConfig = isTesla ? {
+        volume: 1.0, // 特斯拉车机音量优化
+        muted: false, // 确保不静音
+        autoplay: true, // 强制自动播放
+        playsInline: true, // 内联播放
+        mutex: false, // 允许多个播放器
+        autoSize: true, // 自动调整大小
+        fullscreenWeb: false, // 禁用网页全屏，使用原生全屏
+        hotkey: true, // 启用快捷键
+        miniProgressBar: false, // 禁用迷你进度条，避免干扰
+        backdrop: false, // 禁用背景，提高性能
+        moreVideoAttr: {
+            crossOrigin: 'anonymous',
+            'webkit-playsinline': 'true',
+            'playsinline': 'true',
+            'x5-playsinline': 'true',
+            'x5-video-player-type': 'h5',
+            'x5-video-player-fullscreen': 'true'
+        }
+    } : {};
+
     // Create new ArtPlayer instance
     art = new Artplayer({
         container: '#player',
@@ -471,6 +501,8 @@ function initPlayer(videoUrl) {
         moreVideoAttr: {
             crossOrigin: 'anonymous',
         },
+        // 应用特斯拉优化配置
+        ...teslaConfig,
         customType: {
             m3u8: function (video, url) {
                 // 清理之前的HLS实例

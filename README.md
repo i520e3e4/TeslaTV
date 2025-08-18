@@ -1,4 +1,4 @@
-# LibreTV - 免费在线视频搜索与观看平台
+# TeslaTV - 免费在线视频搜索与观看平台
 
 <div align="center">
   <img src="image/logo.png" alt="LibreTV Logo" width="120">
@@ -8,9 +8,26 @@
 
 ## 📺 项目简介
 
-LibreTV 是一个轻量级、免费的在线视频搜索与观看平台，提供来自多个视频源的内容搜索与播放服务。无需注册，即开即用，支持多种设备访问。项目结合了前端技术和后端代理功能，可部署在支持服务端功能的各类网站托管服务上。**项目门户**： [libretv.is-an.org](https://libretv.is-an.org)
+TeslaTV 是一个轻量级、免费的在线视频搜索与观看平台，提供来自多个视频源的内容搜索与播放服务。无需注册，即开即用，支持多种设备访问。项目结合了前端技术和后端代理功能，可部署在支持服务端功能的各类网站托管服务上。**项目门户**： [teslatv.is-an.org](https://teslatv.is-an.org)
 
 本项目基于 [bestK/tv](https://github.com/bestK/tv) 进行重构与增强。
+
+### 🚗 特斯拉车机适配
+
+本项目特别优化了特斯拉车机的使用体验，支持在行车过程中播放视频内容：
+- 自动检测特斯拉车机环境
+- 绕过行车安全限制
+- 优化触摸交互体验
+- 模拟GPS静止状态
+- 特殊的播放器配置
+
+### 🔄 智能API管理
+
+集成了自动API资源管理系统：
+- 自动发现和收集新的API源
+- 定期检测API质量和可用性
+- 智能筛选高质量视频源
+- 自动更新和维护API列表
 
 <details>
   <summary>点击查看项目截图</summary>
@@ -19,11 +36,11 @@ LibreTV 是一个轻量级、免费的在线视频搜索与观看平台，提供
 
 ## 🚀 快速部署
 
-选择以下任一平台，点击一键部署按钮，即可快速创建自己的 LibreTV 实例：
+选择以下任一平台，点击一键部署按钮，即可快速创建自己的 TeslaTV 实例：
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLibreSpark%2FLibreTV)  
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/LibreSpark/LibreTV)  
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/LibreSpark/LibreTV)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLibreSpark%2FTeslaTV)  
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/LibreSpark/TeslaTV)  
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/LibreSpark/TeslaTV)
 
 ## 🚨 重要声明
 
@@ -70,11 +87,11 @@ Pull Bot 会反复触发无效的 PR 和垃圾邮件，严重干扰项目维护�
 ### Docker
 ```
 docker run -d \
-  --name libretv \
+  --name teslatv \
   --restart unless-stopped \
   -p 8899:8080 \
   -e PASSWORD=your_password \
-  bestzwei/libretv:latest
+  bestzwei/teslatv:latest
 ```
 
 ### Docker Compose
@@ -83,16 +100,16 @@ docker run -d \
 
 ```yaml
 services:
-  libretv:
-    image: bestzwei/libretv:latest
-    container_name: libretv
+  teslatv:
+    image: bestzwei/teslatv:latest
+    container_name: teslatv
     ports:
       - "8899:8080" # 将内部 8080 端口映射到主机的 8899 端口
     environment:
       - PASSWORD=${PASSWORD:-111111} # 可将 111111 修改为你想要的密码，默认为 your_password
     restart: unless-stopped
 ```
-启动 LibreTV：
+启动 TeslaTV：
 
 ```bash
 docker compose up -d
@@ -120,14 +137,30 @@ npm run dev
 
 ## 🔧 自定义配置
 
-### 密码保护
+### 环境变量配置
 
 **重要提示**: 为确保安全，所有部署都必须设置 PASSWORD 环境变量，否则用户将看到设置密码的提示。
+
+#### 基础配置
+- `PASSWORD`: 访问密码（必需）
+- `PORT`: 服务端口（默认8080）
+- `DEBUG`: 调试模式（默认false）
+
+#### 特斯拉车机配置
+- `TESLA_MODE_ENABLED`: 启用特斯拉适配（默认true）
+- `TESLA_FORCE_PLAYBACK`: 强制视频播放（默认true）
+- `TESLA_MOCK_GPS`: 模拟GPS静止（默认true）
+
+#### API管理配置
+- `API_UPDATE_ENABLED`: 启用API自动更新（默认true）
+- `API_UPDATE_INTERVAL`: 更新间隔毫秒数（默认604800000，7天）
+- `API_QUALITY_THRESHOLD`: API质量阈值（默认0.7）
+- `API_MAX_SOURCES`: 最大API源数量（默认20）
 
 
 ### API兼容性
 
-LibreTV 支持标准的苹果 CMS V10 API 格式。添加自定义 API 时需遵循以下格式：
+TeslaTV 支持标准的苹果 CMS V10 API 格式。添加自定义 API 时需遵循以下格式：
 - 搜索接口: `https://example.com/api.php/provide/vod/?ac=videolist&wd=关键词`
 - 详情接口: `https://example.com/api.php/provide/vod/?ac=detail&ids=视频ID`
 
@@ -158,7 +191,7 @@ LibreTV 支持标准的苹果 CMS V10 API 格式。添加自定义 API 时需遵
 
 ## ⚠️ 免责声明
 
-LibreTV 仅作为视频搜索工具，不存储、上传或分发任何视频内容。所有视频均来自第三方 API 接口提供的搜索结果。如有侵权内容，请联系相应的内容提供方。
+TeslaTV 仅作为视频搜索工具，不存储、上传或分发任何视频内容。所有视频均来自第三方 API 接口提供的搜索结果。如有侵权内容，请联系相应的内容提供方。
 
 本项目开发者不对使用本项目产生的任何后果负责。使用本项目时，您必须遵守当地的法律法规。
 
@@ -173,4 +206,4 @@ LibreTV 仅作为视频搜索工具，不存储、上传或分发任何视频内
 
 - **[Sharon](https://sharon.io)**
 - **[ZMTO](https://zmto.com)**
-- **[YXVM](https://yxvm.com)**  
+- **[YXVM](https://yxvm.com)**

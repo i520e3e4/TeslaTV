@@ -1,0 +1,46 @@
+# Cloudflare Pages重定向和重写配置
+
+# API代理重写 - 将/proxy/*请求重写到Cloudflare Functions
+/proxy/* /proxy/:splat 200
+
+# 搜索页面重定向
+/search /index.html 200
+/search/* /index.html 200
+
+# 播放器页面重定向
+/watch /player.html 200
+/watch/* /player.html 200
+/player /player.html 200
+
+# 关于页面重定向
+/about /about.html 200
+
+# 根目录重定向到首页
+/ /index.html 200
+
+# PWA相关重定向
+/manifest.json /manifest.json 200
+/service-worker.js /service-worker.js 200
+
+# 静态资源重定向
+/favicon.ico /image/logo.png 200
+
+# API兼容性重定向（向后兼容）
+/api/* /proxy/:splat 301
+
+# 特斯拉车机特殊路径
+/tesla /player.html 200
+/tesla/* /player.html 200
+/automotive /player.html 200
+/automotive/* /player.html 200
+
+# 移动端优化重定向
+/mobile /index.html 200
+/mobile/* /index.html 200
+
+# 错误页面重定向
+/404 /index.html 404
+/500 /index.html 500
+
+# 默认回退 - 所有未匹配的路径重定向到首页
+/* /index.html 404
