@@ -10,7 +10,6 @@
 # 播放器页面重定向
 /watch /player.html 200
 /watch/* /player.html 200
-/player /player.html 200
 
 # 关于页面重定向
 /about /about.html 200

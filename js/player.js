@@ -126,37 +126,45 @@ function initializePageContent() {
     const savedPosition = parseInt(urlParams.get('position') || '0'); // 获取保存的播放位置
     // 解决历史记录问题：检查URL是否是player.html开头的链接
     // 如果是，说明这是历史记录重定向，需要解析真实的视频URL
-    if (videoUrl && videoUrl.includes('player.html')) {
+    if (videoUrl && videoUrl.includes('player.html') && !videoUrl.startsWith('http')) {
         try {
             // 尝试从嵌套URL中提取真实的视频链接
-            const nestedUrlParams = new URLSearchParams(videoUrl.split('?')[1]);
-            // 从嵌套参数中获取真实视频URL
-            const nestedVideoUrl = nestedUrlParams.get('url');
-            // 检查嵌套URL是否包含播放位置信息
-            const nestedPosition = nestedUrlParams.get('position');
-            const nestedIndex = nestedUrlParams.get('index');
-            const nestedTitle = nestedUrlParams.get('title');
+            const urlParts = videoUrl.split('?');
+            if (urlParts.length > 1) {
+                const nestedUrlParams = new URLSearchParams(urlParts[1]);
+                // 从嵌套参数中获取真实视频URL
+                const nestedVideoUrl = nestedUrlParams.get('url');
+                // 检查嵌套URL是否包含播放位置信息
+                const nestedPosition = nestedUrlParams.get('position');
+                const nestedIndex = nestedUrlParams.get('index');
+                const nestedTitle = nestedUrlParams.get('title');
 
-            if (nestedVideoUrl) {
-                videoUrl = nestedVideoUrl;
+                if (nestedVideoUrl && nestedVideoUrl.startsWith('http')) {
+                    videoUrl = nestedVideoUrl;
 
-                // 更新当前URL参数
-                const url = new URL(window.location.href);
-                if (!urlParams.has('position') && nestedPosition) {
-                    url.searchParams.set('position', nestedPosition);
+                    // 更新当前URL参数
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('url', videoUrl);
+                    if (!urlParams.has('position') && nestedPosition) {
+                        url.searchParams.set('position', nestedPosition);
+                    }
+                    if (!urlParams.has('index') && nestedIndex) {
+                        url.searchParams.set('index', nestedIndex);
+                    }
+                    if (!urlParams.has('title') && nestedTitle) {
+                        url.searchParams.set('title', nestedTitle);
+                    }
+                    // 替换当前URL
+                    window.history.replaceState({}, '', url);
+                } else {
+                    showError('历史记录链接无效，请返回首页重新访问');
+                    return;
                 }
-                if (!urlParams.has('index') && nestedIndex) {
-                    url.searchParams.set('index', nestedIndex);
-                }
-                if (!urlParams.has('title') && nestedTitle) {
-                    url.searchParams.set('title', nestedTitle);
-                }
-                // 替换当前URL
-                window.history.replaceState({}, '', url);
-            } else {
-                showError('历史记录链接无效，请返回首页重新访问');
             }
         } catch (e) {
+            console.error('解析嵌套URL失败:', e);
+            showError('URL解析失败，请返回首页重新访问');
+            return;
         }
     }
 
