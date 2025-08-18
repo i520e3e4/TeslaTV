@@ -94,6 +94,14 @@ let currentVideoUrl = ''; // 记录当前实际的视频URL
 const isWebkit = (typeof window.webkitConvertPointFromNodeToPage === 'function')
 Artplayer.FULLSCREEN_WEB_IN_BODY = true;
 
+// 跳过片头片尾功能配置
+let skipIntroEnabled = true; // 默认开启跳过片头功能
+let skipOutroEnabled = true; // 默认开启跳过片尾功能
+let introSkipTime = 90; // 片头跳过时间（秒）
+let outroSkipTime = 120; // 片尾跳过时间（秒）
+let skipIntroShown = false; // 是否已显示跳过片头提示
+let skipOutroShown = false; // 是否已显示跳过片尾提示
+
 // 页面加载
 document.addEventListener('DOMContentLoaded', function () {
     // 先检查用户是否已通过密码验证
@@ -404,6 +412,120 @@ function showShortcutHint(text, direction) {
     }, 2000);
 }
 
+// 显示跳过片头片尾按钮
+function showSkipButton(type, skipToTime) {
+    // 移除现有的跳过按钮
+    const existingButton = document.querySelector('.skip-button');
+    if (existingButton) {
+        existingButton.remove();
+    }
+    
+    // 创建跳过按钮
+    const skipButton = document.createElement('div');
+    skipButton.className = 'skip-button';
+    skipButton.innerHTML = `
+        <button onclick="skipTo(${skipToTime})" class="skip-btn">
+            <span>跳过${type === 'intro' ? '片头' : '片尾'}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+            </svg>
+        </button>
+    `;
+    
+    // 添加样式
+    skipButton.style.cssText = `
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        pointer-events: auto;
+    `;
+    
+    const button = skipButton.querySelector('.skip-btn');
+    button.style.cssText = `
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        border: 2px solid #23ade5;
+        border-radius: 25px;
+        padding: 8px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    `;
+    
+    // 添加悬停效果
+    button.addEventListener('mouseenter', () => {
+        button.style.background = '#23ade5';
+        button.style.transform = 'scale(1.05)';
+    });
+    
+    button.addEventListener('mouseleave', () => {
+        button.style.background = 'rgba(0, 0, 0, 0.8)';
+        button.style.transform = 'scale(1)';
+    });
+    
+    // 添加到播放器容器
+    const playerContainer = document.getElementById('player');
+    if (playerContainer) {
+        playerContainer.appendChild(skipButton);
+        
+        // 10秒后自动移除
+        setTimeout(() => {
+            if (skipButton.parentNode) {
+                skipButton.remove();
+            }
+        }, 10000);
+    }
+}
+
+// 跳转到指定时间
+function skipTo(time) {
+    if (art && art.video) {
+        art.currentTime = time;
+        // 移除跳过按钮
+        const skipButton = document.querySelector('.skip-button');
+        if (skipButton) {
+            skipButton.remove();
+        }
+        showShortcutHint(`已跳转到 ${formatTime(time)}`, 'right');
+    }
+}
+
+// 检查是否需要显示跳过按钮
+function checkSkipTiming() {
+    if (!art || !art.video || !art.duration) return;
+    
+    const currentTime = art.currentTime;
+    const duration = art.duration;
+    
+    // 检查片头跳过
+    if (skipIntroEnabled && !skipIntroShown && currentTime >= 5 && currentTime <= introSkipTime) {
+        skipIntroShown = true;
+        showSkipButton('intro', introSkipTime);
+    }
+    
+    // 检查片尾跳过
+    if (skipOutroEnabled && !skipOutroShown && currentTime >= (duration - outroSkipTime) && currentTime < duration - 10) {
+        skipOutroShown = true;
+        showSkipButton('outro', duration - 10);
+    }
+}
+
+// 重置跳过状态（切换集数时调用）
+function resetSkipStatus() {
+    skipIntroShown = false;
+    skipOutroShown = false;
+    // 移除现有的跳过按钮
+    const existingButton = document.querySelector('.skip-button');
+    if (existingButton) {
+        existingButton.remove();
+    }
+}
+
 // 初始化播放器
 function initPlayer(videoUrl) {
     if (!videoUrl) {
@@ -676,6 +798,13 @@ function initPlayer(videoUrl) {
 
     // 播放器加载完成后初始隐藏工具栏
     art.on('ready', () => {
+        // 重置跳过状态
+        resetSkipStatus();
+        
+        // 添加时间更新监听器来检查跳过时机
+        art.on('video:timeupdate', () => {
+            checkSkipTiming();
+        });
         hideControls();
     });
 
@@ -985,6 +1114,9 @@ function playEpisode(index) {
 
     // 重置用户点击位置记录
     userClickedPosition = null;
+    
+    // 重置跳过状态
+    resetSkipStatus();
 
     // 三秒后保存到历史记录
     setTimeout(() => saveToHistory(), 3000);

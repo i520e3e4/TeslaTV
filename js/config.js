@@ -230,7 +230,12 @@ const PLAYER_CONFIG = {
     filterAds: true,  // 是否启用广告过滤
     autoPlayNext: true,  // 默认启用自动连播功能
     adFilteringEnabled: true, // 默认开启分片广告过滤
-    adFilteringStorage: 'adFilteringEnabled' // 存储广告过滤设置的键名
+    adFilteringStorage: 'adFilteringEnabled', // 存储广告过滤设置的键名
+    // 跳过片头片尾配置
+    skipIntroEnabled: false,  // 默认关闭跳过片头
+    skipOutroEnabled: false,  // 默认关闭跳过片尾
+    introSkipTime: 90,        // 默认片头跳过时间（秒）
+    outroSkipTime: 120        // 默认片尾跳过时间（秒）
 };
 
 // 增加错误信息本地化

@@ -54,6 +54,30 @@ document.addEventListener('DOMContentLoaded', function () {
         adFilterToggle.checked = localStorage.getItem(PLAYER_CONFIG.adFilteringStorage) !== 'false'; // 默认为true
     }
 
+    // 设置跳过片头开关初始状态
+    const skipIntroToggle = document.getElementById('skipIntroToggle');
+    if (skipIntroToggle) {
+        skipIntroToggle.checked = localStorage.getItem('skipIntroEnabled') !== 'false'; // 默认为true
+    }
+
+    // 设置跳过片尾开关初始状态
+    const skipOutroToggle = document.getElementById('skipOutroToggle');
+    if (skipOutroToggle) {
+        skipOutroToggle.checked = localStorage.getItem('skipOutroEnabled') !== 'false'; // 默认为true
+    }
+
+    // 设置片头跳过时间初始值
+    const introSkipTimeInput = document.getElementById('introSkipTime');
+    if (introSkipTimeInput) {
+        introSkipTimeInput.value = localStorage.getItem('introSkipTime') || '90';
+    }
+
+    // 设置片尾跳过时间初始值
+    const outroSkipTimeInput = document.getElementById('outroSkipTime');
+    if (outroSkipTimeInput) {
+        outroSkipTimeInput.value = localStorage.getItem('outroSkipTime') || '120';
+    }
+
     // 设置事件监听器
     setupEventListeners();
 
@@ -554,6 +578,58 @@ function setupEventListeners() {
     if (adFilterToggle) {
         adFilterToggle.addEventListener('change', function (e) {
             localStorage.setItem(PLAYER_CONFIG.adFilteringStorage, e.target.checked);
+        });
+    }
+
+    // 跳过片头开关事件绑定
+    const skipIntroToggle = document.getElementById('skipIntroToggle');
+    if (skipIntroToggle) {
+        skipIntroToggle.addEventListener('change', function (e) {
+            localStorage.setItem('skipIntroEnabled', e.target.checked);
+            // 如果播放器页面存在，更新全局变量
+            if (typeof skipIntroEnabled !== 'undefined') {
+                skipIntroEnabled = e.target.checked;
+            }
+        });
+    }
+
+    // 跳过片尾开关事件绑定
+    const skipOutroToggle = document.getElementById('skipOutroToggle');
+    if (skipOutroToggle) {
+        skipOutroToggle.addEventListener('change', function (e) {
+            localStorage.setItem('skipOutroEnabled', e.target.checked);
+            // 如果播放器页面存在，更新全局变量
+            if (typeof skipOutroEnabled !== 'undefined') {
+                skipOutroEnabled = e.target.checked;
+            }
+        });
+    }
+
+    // 片头跳过时间输入事件绑定
+    const introSkipTimeInput = document.getElementById('introSkipTime');
+    if (introSkipTimeInput) {
+        introSkipTimeInput.addEventListener('change', function (e) {
+            const value = Math.max(30, Math.min(300, parseInt(e.target.value) || 90));
+            e.target.value = value;
+            localStorage.setItem('introSkipTime', value);
+            // 如果播放器页面存在，更新全局变量
+            if (typeof introSkipTime !== 'undefined') {
+                introSkipTime = value;
+            }
+        });
+    }
+
+    // 片尾跳过时间输入事件绑定
+    const outroSkipTimeInput = document.getElementById('outroSkipTime');
+    if (outroSkipTimeInput) {
+        outroSkipTimeInput.addEventListener('change', function (e) {
+            const value = Math.max(60, Math.min(600, parseInt(e.target.value) || 120));
+            e.target.value = value;
+            localStorage.setItem('outroSkipTime', value);
+            // 如果播放器页面存在，更新全局变量
+            if (typeof outroSkipTime !== 'undefined') {
+                outroSkipTime = value;
+            }
         });
     }
 }

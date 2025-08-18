@@ -162,7 +162,9 @@ class APIManager {
 
     async testSingleAPI(api) {
         try {
+            const startTime = Date.now();
             const score = await this.calculateAPIScore(api);
+            const responseTime = Date.now() - startTime;
             
             if (score > 60) { // 只保留质量分数大于60的API
                 const apiKey = this.generateAPIKey(api.url);
@@ -171,11 +173,12 @@ class APIManager {
                     name: api.name,
                     adult: api.adult,
                     source: api.source,
-                    lastTested: Date.now()
+                    lastTested: Date.now(),
+                    responseTime: responseTime
                 });
                 this.qualityScores.set(apiKey, score);
                 
-                console.log(`API ${api.name} 测试通过，质量分数: ${score}`);
+                console.log(`API ${api.name} 测试通过，质量分数: ${score}，响应时间: ${responseTime}ms`);
             } else {
                 console.log(`API ${api.name} 质量不达标，分数: ${score}`);
             }
@@ -200,28 +203,58 @@ class APIManager {
             const responseTime = Date.now() - startTime;
             
             if (response.ok) {
-                score += 30; // 基础可用性分数
+                score += 20; // 基础可用性分数
                 
-                // 响应速度评分 (越快分数越高)
-                if (responseTime < 2000) score += 30;
-                else if (responseTime < 5000) score += 20;
-                else if (responseTime < 8000) score += 10;
+                // 响应速度评分 (大幅提高权重，优先低延迟)
+                if (responseTime < 1000) score += 50; // 1秒内响应，最高分
+                else if (responseTime < 2000) score += 40; // 2秒内响应
+                else if (responseTime < 3000) score += 25; // 3秒内响应
+                else if (responseTime < 5000) score += 15; // 5秒内响应
+                else if (responseTime < 8000) score += 5;  // 8秒内响应，低分
                 
                 try {
                     const data = await response.json();
                     
                     // 数据质量评分
                     if (data && data.list && Array.isArray(data.list)) {
-                        score += 20;
+                        score += 15;
                         
                         // 内容数量评分
-                        if (data.list.length > 10) score += 10;
+                        if (data.list.length > 20) score += 15; // 提高内容数量要求
+                        else if (data.list.length > 10) score += 10;
                         else if (data.list.length > 5) score += 5;
                         
-                        // 数据完整性评分
+                        // 数据完整性和画质评分
                         const sampleItem = data.list[0];
                         if (sampleItem && sampleItem.vod_name && sampleItem.vod_id) {
                             score += 10;
+                            
+                            // 检查是否有高清标识
+                            const name = sampleItem.vod_name || '';
+                            const remarks = sampleItem.vod_remarks || '';
+                            const content = (name + remarks).toLowerCase();
+                            
+                            // 画质评分 (优先高画质)
+                            if (content.includes('4k') || content.includes('2160p')) {
+                                score += 20; // 4K最高分
+                            } else if (content.includes('1080p') || content.includes('fhd')) {
+                                score += 15; // 1080p高分
+                            } else if (content.includes('720p') || content.includes('hd')) {
+                                score += 10; // 720p中等分
+                            } else if (content.includes('480p') || content.includes('sd')) {
+                                score += 5;  // 480p低分
+                            }
+                            
+                            // 检查播放源质量
+                            if (sampleItem.vod_play_url) {
+                                const playUrl = sampleItem.vod_play_url.toLowerCase();
+                                if (playUrl.includes('m3u8')) {
+                                    score += 10; // M3U8格式加分
+                                }
+                                if (playUrl.includes('cdn') || playUrl.includes('cache')) {
+                                    score += 5; // CDN加速加分
+                                }
+                            }
                         }
                     }
                 } catch (jsonError) {
@@ -272,9 +305,21 @@ class APIManager {
         // 更新全局API_SITES配置
         const highQualityAPIs = {};
         
-        // 按质量分数排序，只保留前20个最好的API
+        // 按质量分数和响应时间排序，只保留前20个最好的API
         const sortedAPIs = Array.from(this.apiSources.entries())
-            .sort((a, b) => (this.qualityScores.get(b[0]) || 0) - (this.qualityScores.get(a[0]) || 0))
+            .filter(([key, api]) => (this.qualityScores.get(key) || 0) > 70) // 提高质量门槛
+            .sort((a, b) => {
+                const scoreA = this.qualityScores.get(a[0]) || 0;
+                const scoreB = this.qualityScores.get(b[0]) || 0;
+                // 首先按评分排序
+                if (scoreB !== scoreA) {
+                    return scoreB - scoreA;
+                }
+                // 评分相同时，按响应时间排序（越快越好）
+                const timeA = a[1].responseTime || 9999;
+                const timeB = b[1].responseTime || 9999;
+                return timeA - timeB;
+            })
             .slice(0, 20);
         
         sortedAPIs.forEach(([key, api]) => {
