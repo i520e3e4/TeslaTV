@@ -47,6 +47,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (yellowFilterToggle) {
         yellowFilterToggle.checked = localStorage.getItem('yellowFilterEnabled') === 'true';
     }
+    
+    // 设置搜索优化开关初始状态
+    const searchOptimizeToggle = document.getElementById('searchOptimizeToggle');
+    if (searchOptimizeToggle) {
+        searchOptimizeToggle.checked = localStorage.getItem('searchOptimizeEnabled') !== 'false'; // 默认启用
+    }
+    
+    // 设置显示搜索评分开关初始状态
+    const showSearchScoreToggle = document.getElementById('showSearchScoreToggle');
+    if (showSearchScoreToggle) {
+        showSearchScoreToggle.checked = localStorage.getItem('showSearchScoreEnabled') === 'true';
+    }
 
     // 设置广告过滤开关初始状态
     const adFilterToggle = document.getElementById('adFilterToggle');
@@ -632,6 +644,33 @@ function setupEventListeners() {
             }
         });
     }
+    
+    // 搜索优化开关事件绑定
+    const searchOptimizeToggle = document.getElementById('searchOptimizeToggle');
+    if (searchOptimizeToggle) {
+        searchOptimizeToggle.addEventListener('change', function (e) {
+            localStorage.setItem('searchOptimizeEnabled', e.target.checked);
+        });
+    }
+    
+    // 显示搜索评分开关事件绑定
+    const showSearchScoreToggle = document.getElementById('showSearchScoreToggle');
+    if (showSearchScoreToggle) {
+        showSearchScoreToggle.addEventListener('change', function (e) {
+            localStorage.setItem('showSearchScoreEnabled', e.target.checked);
+        });
+    }
+    if (outroSkipTimeInput) {
+        outroSkipTimeInput.addEventListener('change', function (e) {
+            const value = Math.max(60, Math.min(600, parseInt(e.target.value) || 120));
+            e.target.value = value;
+            localStorage.setItem('outroSkipTime', value);
+            // 如果播放器页面存在，更新全局变量
+            if (typeof outroSkipTime !== 'undefined') {
+                outroSkipTime = value;
+            }
+        });
+    }
 }
 
 // 重置搜索区域
@@ -732,15 +771,21 @@ async function search() {
             }
         });
 
-        // 对搜索结果进行排序：按名称优先，名称相同时按接口源排序
-        allResults.sort((a, b) => {
-            // 首先按照视频名称排序
-            const nameCompare = (a.vod_name || '').localeCompare(b.vod_name || '');
-            if (nameCompare !== 0) return nameCompare;
-            
-            // 如果名称相同，则按照来源排序
-            return (a.source_name || '').localeCompare(b.source_name || '');
-        });
+        // 根据用户设置决定是否使用搜索优化器
+        const searchOptimizeEnabled = localStorage.getItem('searchOptimizeEnabled') !== 'false'; // 默认启用
+        if (searchOptimizeEnabled && window.searchOptimizer) {
+            allResults = window.searchOptimizer.optimizeResults(allResults, query);
+        } else {
+            // 降级处理：使用原有的简单排序
+            allResults.sort((a, b) => {
+                // 首先按照视频名称排序
+                const nameCompare = (a.vod_name || '').localeCompare(b.vod_name || '');
+                if (nameCompare !== 0) return nameCompare;
+                
+                // 如果名称相同，则按照来源排序
+                return (a.source_name || '').localeCompare(b.source_name || '');
+            });
+        }
 
         // 更新搜索结果计数
         const searchResultsCount = document.getElementById('searchResultsCount');
@@ -804,6 +849,9 @@ async function search() {
             });
         }
 
+        // 检查是否显示搜索评分
+        const showSearchScoreEnabled = localStorage.getItem('showSearchScoreEnabled') === 'true';
+        
         // 添加XSS保护，使用textContent和属性转义
         const safeResults = allResults.map(item => {
             const safeId = item.vod_id ? item.vod_id.toString().replace(/[^\w-]/g, '') : '';
@@ -852,6 +900,21 @@ async function search() {
                                 <p class="text-gray-400 line-clamp-2 overflow-hidden ${hasCover ? '' : 'text-center'} mb-2">
                                     ${(item.vod_remarks || '暂无介绍').toString().replace(/</g, '&lt;')}
                                 </p>
+                                
+                                ${(showSearchScoreEnabled && item.relevanceScore) ? `
+                                <div class="mb-2">
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <span class="text-green-400">匹配度: ${item.relevanceScore}分</span>
+                                        ${item.matchDetails ? `
+                                            ${item.matchDetails.titleMatch ? '<span class="bg-green-500/20 text-green-300 px-1 rounded">标题</span>' : ''}
+                                            ${item.matchDetails.actorMatch ? '<span class="bg-blue-500/20 text-blue-300 px-1 rounded">演员</span>' : ''}
+                                            ${item.matchDetails.directorMatch ? '<span class="bg-purple-500/20 text-purple-300 px-1 rounded">导演</span>' : ''}
+                                            ${item.matchDetails.yearMatch ? '<span class="bg-yellow-500/20 text-yellow-300 px-1 rounded">年份</span>' : ''}
+                                            ${item.matchDetails.typeMatch ? '<span class="bg-pink-500/20 text-pink-300 px-1 rounded">类型</span>' : ''}
+                                        ` : ''}
+                                    </div>
+                                </div>
+                                ` : ''}
                             </div>
                             
                             <div class="flex justify-between items-center mt-1 pt-1 border-t border-gray-800">
@@ -874,6 +937,27 @@ async function search() {
         }).join('');
 
         resultsDiv.innerHTML = safeResults;
+        
+        // 显示搜索建议（如果启用了搜索优化器和搜索优化功能）
+        if (searchOptimizeEnabled && window.searchOptimizer && allResults.length > 0) {
+            const suggestions = window.searchOptimizer.getSearchSuggestions(query, allResults);
+            if (suggestions.length > 0) {
+                const suggestionsHtml = `
+                    <div class="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                        <h4 class="text-blue-300 font-medium mb-2 flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            搜索建议
+                        </h4>
+                        <ul class="text-sm text-blue-200 space-y-1">
+                            ${suggestions.map(suggestion => `<li>• ${suggestion}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+                resultsDiv.innerHTML += suggestionsHtml;
+            }
+        }
     } catch (error) {
         console.error('搜索错误:', error);
         if (error.name === 'AbortError') {

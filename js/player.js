@@ -94,11 +94,11 @@ let currentVideoUrl = ''; // 记录当前实际的视频URL
 const isWebkit = (typeof window.webkitConvertPointFromNodeToPage === 'function')
 Artplayer.FULLSCREEN_WEB_IN_BODY = true;
 
-// 跳过片头片尾功能配置
-let skipIntroEnabled = true; // 默认开启跳过片头功能
-let skipOutroEnabled = true; // 默认开启跳过片尾功能
-let introSkipTime = 90; // 片头跳过时间（秒）
-let outroSkipTime = 120; // 片尾跳过时间（秒）
+// 跳过片头片尾相关变量
+let skipIntroEnabled = localStorage.getItem('skipIntroEnabled') === 'true';
+let skipOutroEnabled = localStorage.getItem('skipOutroEnabled') === 'true';
+let introSkipTime = parseInt(localStorage.getItem('introSkipTime')) || 90;
+let outroSkipTime = parseInt(localStorage.getItem('outroSkipTime')) || 120;
 let skipIntroShown = false; // 是否已显示跳过片头提示
 let skipOutroShown = false; // 是否已显示跳过片尾提示
 
@@ -423,25 +423,34 @@ function showSkipButton(type, skipToTime) {
     // 创建跳过按钮
     const skipButton = document.createElement('div');
     skipButton.className = 'skip-button';
-    skipButton.innerHTML = `
-        <button onclick="skipTo(${skipToTime})" class="skip-btn">
-            <span>跳过${type === 'intro' ? '片头' : '片尾'}</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
-            </svg>
-        </button>
+    
+    const button = document.createElement('button');
+    button.className = 'skip-btn';
+    button.innerHTML = `
+        <span>跳过${type === 'intro' ? '片头' : '片尾'}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+        </svg>
     `;
+    
+    // 添加点击事件
+    button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        skipTo(skipToTime);
+    });
+    
+    skipButton.appendChild(button);
     
     // 添加样式
     skipButton.style.cssText = `
         position: absolute;
         top: 20px;
         right: 20px;
-        z-index: 1000;
+        z-index: 9999;
         pointer-events: auto;
     `;
     
-    const button = skipButton.querySelector('.skip-btn');
     button.style.cssText = `
         background: rgba(0, 0, 0, 0.8);
         color: white;
@@ -455,6 +464,7 @@ function showSkipButton(type, skipToTime) {
         gap: 8px;
         transition: all 0.3s ease;
         backdrop-filter: blur(10px);
+        outline: none;
     `;
     
     // 添加悬停效果
@@ -468,9 +478,13 @@ function showSkipButton(type, skipToTime) {
         button.style.transform = 'scale(1)';
     });
     
-    // 添加到播放器容器
-    const playerContainer = document.getElementById('player');
+    // 添加到播放器容器的父级
+    const playerContainer = document.getElementById('playerContainer');
     if (playerContainer) {
+        // 确保容器有相对定位
+        if (getComputedStyle(playerContainer).position === 'static') {
+            playerContainer.style.position = 'relative';
+        }
         playerContainer.appendChild(skipButton);
         
         // 10秒后自动移除

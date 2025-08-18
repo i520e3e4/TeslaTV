@@ -195,6 +195,32 @@
                     </div>
                 </div>
                 
+                <!-- 智能搜索优化开关 -->
+                <div class="flex items-center justify-between mb-3 pb-3 border-b border-[#222]">
+                    <div>
+                        <label class="text-sm font-medium text-gray-400">智能搜索优化</label>
+                        <p class="text-xs text-gray-500 mt-1">提升搜索结果准确性和相关性</p>
+                    </div>
+                    <div class="relative inline-block w-12 align-middle select-none">
+                        <input type="checkbox" id="searchOptimizeToggle" class="opacity-0 absolute w-full h-full cursor-pointer z-10">
+                        <div class="toggle-bg bg-[#333] w-12 h-6 rounded-full transition-colors duration-300 ease-in-out"></div>
+                        <div class="toggle-dot absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 transition-transform duration-300 ease-in-out"></div>
+                    </div>
+                </div>
+                
+                <!-- 显示搜索评分开关 -->
+                <div class="flex items-center justify-between mb-3 pb-3 border-b border-[#222]">
+                    <div>
+                        <label class="text-sm font-medium text-gray-400">显示搜索评分</label>
+                        <p class="text-xs text-gray-500 mt-1">显示搜索结果的匹配度评分</p>
+                    </div>
+                    <div class="relative inline-block w-12 align-middle select-none">
+                        <input type="checkbox" id="showSearchScoreToggle" class="opacity-0 absolute w-full h-full cursor-pointer z-10">
+                        <div class="toggle-bg bg-[#333] w-12 h-6 rounded-full transition-colors duration-300 ease-in-out"></div>
+                        <div class="toggle-dot absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 transition-transform duration-300 ease-in-out"></div>
+                    </div>
+                </div>
+                
                 <!-- 片头跳过时间设置 -->
                 <div class="flex items-center justify-between mb-3 pb-3 border-b border-[#222]">
                     <div>
@@ -472,6 +498,7 @@
     <script src="js/douban.js"></script>
     <script src="js/password.js"></script>
     <script src="js/search.js"></script>
+    <script src="js/search-optimizer.js"></script>
     <script src="js/app.js"></script>
 
     <!-- PWA 注册 -->
