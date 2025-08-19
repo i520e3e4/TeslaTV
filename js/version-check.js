@@ -74,7 +74,7 @@ async function checkForUpdates() {
         return {
             current: cleanCurrentVersion,
             latest: cleanLatestVersion,
-            hasUpdate: parseInt(cleanLatestVersion) > parseInt(cleanCurrentVersion),
+            hasUpdate: compareVersions(cleanLatestVersion, cleanCurrentVersion) > 0,
             currentFormatted: formatVersion(cleanCurrentVersion),
             latestFormatted: formatVersion(cleanLatestVersion)
         };
@@ -85,6 +85,51 @@ async function checkForUpdates() {
 }
 
 // 格式化版本号为可读形式 (yyyyMMddhhmm -> yyyy-MM-dd hh:mm)
+// 比较版本号的函数
+function compareVersions(version1, version2) {
+    // 清理版本字符串
+    const v1 = version1.trim();
+    const v2 = version2.trim();
+    
+    // 如果两个版本都是语义化版本号
+    if (v1.match(/^V?\d+\.\d+\.\d+$/) && v2.match(/^V?\d+\.\d+\.\d+$/)) {
+        const parseSemanticVersion = (v) => {
+            const cleaned = v.replace(/^V/, '');
+            return cleaned.split('.').map(num => parseInt(num, 10));
+        };
+        
+        const parts1 = parseSemanticVersion(v1);
+        const parts2 = parseSemanticVersion(v2);
+        
+        for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+            const part1 = parts1[i] || 0;
+            const part2 = parts2[i] || 0;
+            
+            if (part1 > part2) return 1;
+            if (part1 < part2) return -1;
+        }
+        return 0;
+    }
+    
+    // 如果两个版本都是时间戳格式
+    if (v1.match(/^\d{12}$/) && v2.match(/^\d{12}$/)) {
+        const num1 = parseInt(v1, 10);
+        const num2 = parseInt(v2, 10);
+        return num1 > num2 ? 1 : (num1 < num2 ? -1 : 0);
+    }
+    
+    // 混合格式比较：语义化版本号总是比时间戳格式新
+    if (v1.match(/^V?\d+\.\d+\.\d+$/) && v2.match(/^\d{12}$/)) {
+        return 1; // 语义化版本号更新
+    }
+    if (v1.match(/^\d{12}$/) && v2.match(/^V?\d+\.\d+\.\d+$/)) {
+        return -1; // 时间戳格式更旧
+    }
+    
+    // 默认字符串比较
+    return v1.localeCompare(v2);
+}
+
 function formatVersion(versionString) {
     // 检测版本字符串是否有效
     if (!versionString) {
@@ -94,8 +139,13 @@ function formatVersion(versionString) {
     // 清理版本字符串（移除可能的空格或换行符）
     const cleanedString = versionString.trim();
     
+    // 处理语义化版本号（如 V1.1.0）
+    if (cleanedString.match(/^V?\d+\.\d+\.\d+$/)) {
+        return cleanedString;
+    }
+    
     // 格式化标准12位版本号
-    if (cleanedString.length === 12) {
+    if (cleanedString.length === 12 && /^\d{12}$/.test(cleanedString)) {
         const year = cleanedString.substring(0, 4);
         const month = cleanedString.substring(4, 6);
         const day = cleanedString.substring(6, 8);
@@ -161,9 +211,19 @@ function addVersionInfoToFooter() {
         displayVersionElement(versionElement);
     }).catch(error => {
         console.error('版本检测出错:', error);
-        // 创建错误版本信息元素并显示
-        const errorElement = createErrorVersionElement(`错误信息: ${error.message}`);
-        displayVersionElement(errorElement);
+        // 当无法获取远程版本时，显示当前版本
+        fetchVersion('/VERSION.txt', '获取当前版本失败', {
+            cache: 'no-store'
+        }).then(currentVersion => {
+            const versionElement = document.createElement('div');
+            versionElement.className = 'text-sm text-gray-600 dark:text-gray-400';
+            versionElement.innerHTML = `版本: ${formatVersion(currentVersion.trim())} <span class="text-yellow-500">(无法检查更新)</span>`;
+            displayVersionElement(versionElement);
+        }).catch(localError => {
+            console.error('获取本地版本失败:', localError);
+            const errorElement = createErrorVersionElement(`版本信息获取失败`);
+            displayVersionElement(errorElement);
+        });
     });
 }
 

@@ -31,6 +31,22 @@
             </button>
         </div>
         <h2 id="videoTitle" class="text-xl font-semibold flex-1 text-center overflow-x-auto whitespace-nowrap truncate custom-title-scroll"></h2>
+        
+        <!-- 特斯拉模式切换按钮 -->
+        <button id="teslaToggle" onclick="toggleTeslaMode()" class="px-3 py-2 bg-[#222] hover:bg-[#333] border border-[#333] rounded-lg transition-colors flex items-center min-w-0 mr-1" title="切换特斯拉车机模式">
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+            <span id="teslaToggleText" class="text-sm">特斯拉</span>
+        </button>
+        
+        <!-- 特斯拉调试信息按钮 -->
+        <button id="teslaDebugToggle" onclick="toggleTeslaDebugPanel()" class="px-2 py-2 bg-[#222] hover:bg-[#333] border border-[#333] rounded-lg transition-colors flex items-center min-w-0 mr-2" title="显示/隐藏特斯拉调试信息">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </button>
+        
         <a href="#" id="goBack" onclick="goBack(event)" class="px-4 py-2 bg-[#222] hover:bg-[#333] border border-[#333] rounded-lg transition-colors flex items-center min-w-0 home-btn">
             <svg class="w-5 h-5 mr-1" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg">
                 <path d="M5.25 11h15a1.5 1.5 0 1 1 0 3H5.25a1.5 1.5 0 0 1 0-3z"/>
@@ -76,6 +92,48 @@
                     <div class="error-icon">⚠️</div>
                     <div id="error-message">视频加载失败</div>
                     <div class="error-message-sub">请尝试其他视频源或稍后重试</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 特斯拉调试信息面板 -->
+        <div id="teslaDebugPanel" class="player-container mb-2 bg-[#1a1a1a] border border-[#333] rounded-lg p-3" style="display: none;">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-semibold text-[#00ccff]">🚗 特斯拉模式调试信息</h3>
+                <button onclick="toggleTeslaDebugPanel()" class="text-xs text-gray-400 hover:text-white">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                <div class="space-y-1">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">强制模式:</span>
+                        <span id="debugForceTesla" class="text-white">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">车机检测:</span>
+                        <span id="debugTeslaDetected" class="text-white">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">当前模式:</span>
+                        <span id="debugCurrentMode" class="text-white">-</span>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">User Agent:</span>
+                        <span id="debugUserAgent" class="text-white text-right max-w-[150px] truncate" title="">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">播放器状态:</span>
+                        <span id="debugPlayerStatus" class="text-white">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">视频URL:</span>
+                        <span id="debugVideoUrl" class="text-white text-right max-w-[150px] truncate" title="">-</span>
+                    </div>
                 </div>
             </div>
         </div>

@@ -17,6 +17,12 @@ class TeslaAdapter {
     }
 
     detectTesla() {
+        // 检查是否手动强制启用特斯拉模式
+        if (localStorage.getItem('forceTeslaMode') === 'true') {
+            console.log('手动强制启用特斯拉模式');
+            return true;
+        }
+        
         // 检测特斯拉车机环境的多种方法
         const userAgent = navigator.userAgent.toLowerCase();
         const teslaIndicators = [
@@ -24,7 +30,10 @@ class TeslaAdapter {
             'qtcarplay',
             'carplay',
             'automotive',
-            'vehicle'
+            'vehicle',
+            'webkit', // 特斯拉车机使用WebKit
+            'linux', // 特斯拉车机基于Linux
+            'x11' // Linux图形界面
         ];
         
         // 检查User Agent
@@ -36,17 +45,45 @@ class TeslaAdapter {
         const isCarScreen = (
             (screen.width === 1920 && screen.height === 1200) || // Model S/X
             (screen.width === 1440 && screen.height === 900) ||  // Model 3/Y
-            (screen.width === 1280 && screen.height === 800)     // 其他车机
+            (screen.width === 1280 && screen.height === 800) ||  // 其他车机
+            (screen.width === 1200 && screen.height === 1920) || // 竖屏模式
+            (screen.width === 900 && screen.height === 1440) ||  // 竖屏模式
+            (screen.width >= 1024 && screen.height >= 600)       // 宽松的车机屏幕检测
         );
         
         // 检查是否在车机浏览器中
         const isCarBrowser = (
-            !window.chrome || // 非标准Chrome
-            window.navigator.webdriver || // WebDriver环境
-            window.navigator.platform.includes('Linux') // 车机通常基于Linux
+            window.navigator.platform.includes('Linux') || // 车机通常基于Linux
+            window.navigator.platform.includes('X11') ||   // Linux图形界面
+            !window.chrome ||                               // 非标准Chrome
+            window.navigator.webdriver ||                   // WebDriver环境
+            window.navigator.maxTouchPoints > 0             // 触摸屏设备
         );
         
-        return hasIndicator || (isCarScreen && isCarBrowser);
+        // 检查网络环境（车机可能有特殊的网络配置）
+        const hasCarNetworkFeatures = (
+            !navigator.onLine ||                            // 可能处于离线状态
+            navigator.connection?.type === 'cellular' ||    // 使用蜂窝网络
+            navigator.connection?.effectiveType === '4g'    // 4G网络
+        );
+        
+        // 更宽松的检测逻辑
+        const isTeslaLikely = hasIndicator || 
+                             (isCarScreen && isCarBrowser) || 
+                             (isCarScreen && hasCarNetworkFeatures);
+        
+        console.log('特斯拉检测结果:', {
+            userAgent,
+            hasIndicator,
+            isCarScreen,
+            isCarBrowser,
+            hasCarNetworkFeatures,
+            screenSize: `${screen.width}x${screen.height}`,
+            platform: navigator.platform,
+            isTeslaLikely
+        });
+        
+        return isTeslaLikely;
     }
 
     init() {
@@ -392,8 +429,29 @@ class TeslaAdapter {
             isTesla: this.isTesla,
             isDriving: this.isDriving,
             videoCount: this.videoElements.size,
-            adaptationsActive: this.isTesla
+            adaptationsActive: this.isTesla,
+            userAgent: navigator.userAgent,
+            screenSize: `${screen.width}x${screen.height}`,
+            platform: navigator.platform,
+            forcedMode: localStorage.getItem('forceTeslaMode') === 'true',
+            timestamp: new Date().toLocaleString()
         };
+    }
+
+    // 显示详细的调试信息
+    showDebugInfo() {
+        const status = this.getStatus();
+        console.group('🚗 特斯拉车机适配状态');
+        console.log('特斯拉模式:', status.isTesla ? '✅ 已启用' : '❌ 未启用');
+        console.log('行车状态:', status.isDriving ? '🚗 行驶中' : '🅿️ 静止');
+        console.log('视频元素数量:', status.videoCount);
+        console.log('强制模式:', status.forcedMode ? '✅ 已启用' : '❌ 未启用');
+        console.log('屏幕尺寸:', status.screenSize);
+        console.log('平台信息:', status.platform);
+        console.log('用户代理:', status.userAgent);
+        console.log('检测时间:', status.timestamp);
+        console.groupEnd();
+        return status;
     }
 
     // 手动切换驾驶状态（用于测试）
@@ -407,11 +465,136 @@ class TeslaAdapter {
         }
     }
 
+    // 创建调试面板
+    createDebugPanel() {
+        if (document.getElementById('tesla-debug-panel')) {
+            return; // 面板已存在
+        }
+
+        const panel = document.createElement('div');
+        panel.id = 'tesla-debug-panel';
+        panel.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 300px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 10000;
+            display: none;
+            border: 2px solid #00ccff;
+            box-shadow: 0 4px 20px rgba(0, 204, 255, 0.3);
+        `;
+
+        panel.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin: 0; color: #00ccff;">🚗 特斯拉调试</h3>
+                <button id="tesla-debug-close" style="background: #ff6b6b; border: none; color: white; padding: 2px 6px; border-radius: 3px; cursor: pointer;">×</button>
+            </div>
+            <div id="tesla-debug-content"></div>
+            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333;">
+                <button id="tesla-force-enable" style="background: #00ccff; border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-right: 5px;">启用模式</button>
+                <button id="tesla-force-disable" style="background: #ff6b6b; border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer;">禁用模式</button>
+            </div>
+        `;
+
+        document.body.appendChild(panel);
+
+        // 绑定事件
+        document.getElementById('tesla-debug-close').onclick = () => {
+            panel.style.display = 'none';
+        };
+
+        document.getElementById('tesla-force-enable').onclick = () => {
+            window.forceTeslaMode();
+            this.updateDebugPanel();
+        };
+
+        document.getElementById('tesla-force-disable').onclick = () => {
+            window.disableTeslaMode();
+            this.updateDebugPanel();
+        };
+
+        // 双击屏幕右上角显示面板
+        let rightClickCount = 0;
+        document.addEventListener('click', (e) => {
+            if (e.clientX > window.innerWidth - 100 && e.clientY < 100) {
+                rightClickCount++;
+                setTimeout(() => {
+                    if (rightClickCount === 2) {
+                        this.toggleDebugPanel();
+                    }
+                    rightClickCount = 0;
+                }, 300);
+            }
+        });
+
+        this.updateDebugPanel();
+    }
+
+    // 更新调试面板内容
+    updateDebugPanel() {
+        const panel = document.getElementById('tesla-debug-panel');
+        const content = document.getElementById('tesla-debug-content');
+        
+        if (!panel || !content) return;
+
+        const status = this.getStatus();
+        const statusIcon = status.isTesla ? '✅' : '❌';
+        const drivingIcon = status.isDriving ? '🚗' : '🅿️';
+        const forcedIcon = status.forcedMode ? '🔧' : '🔄';
+
+        content.innerHTML = `
+            <div style="margin-bottom: 8px;">
+                <strong>状态:</strong> ${statusIcon} ${status.isTesla ? '已启用' : '未启用'}
+            </div>
+            <div style="margin-bottom: 8px;">
+                <strong>行车:</strong> ${drivingIcon} ${status.isDriving ? '行驶中' : '静止'}
+            </div>
+            <div style="margin-bottom: 8px;">
+                <strong>强制:</strong> ${forcedIcon} ${status.forcedMode ? '已启用' : '自动检测'}
+            </div>
+            <div style="margin-bottom: 8px;">
+                <strong>视频:</strong> ${status.videoCount} 个元素
+            </div>
+            <div style="margin-bottom: 8px;">
+                <strong>屏幕:</strong> ${status.screenSize}
+            </div>
+            <div style="margin-bottom: 8px;">
+                <strong>平台:</strong> ${status.platform}
+            </div>
+            <div style="font-size: 10px; color: #888;">
+                更新时间: ${status.timestamp}
+            </div>
+        `;
+    }
+
+    // 切换调试面板显示
+    toggleDebugPanel() {
+        const panel = document.getElementById('tesla-debug-panel');
+        if (panel) {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            if (panel.style.display === 'block') {
+                this.updateDebugPanel();
+            }
+        }
+    }
+
     // 清理资源
     destroy() {
         this.observers.forEach(observer => observer.disconnect());
         this.observers.clear();
         this.videoElements.clear();
+        
+        // 清理调试面板
+        const panel = document.getElementById('tesla-debug-panel');
+        if (panel) {
+            panel.remove();
+        }
     }
 }
 
@@ -420,46 +603,113 @@ window.teslaAdapter = new TeslaAdapter();
 
 // 暴露一些有用的方法
 window.forceTeslaMode = () => {
+    localStorage.setItem('forceTeslaMode', 'true');
     window.teslaAdapter.isTesla = true;
     window.teslaAdapter.init();
+    console.log('已强制启用特斯拉模式');
+    
+    // 显示启用提示
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #00ccff;
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        font-size: 18px;
+        font-weight: bold;
+        z-index: 10000;
+        box-shadow: 0 4px 20px rgba(0,204,255,0.3);
+    `;
+    notification.textContent = '特斯拉模式已启用！';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+};
+
+window.disableTeslaMode = () => {
+    localStorage.removeItem('forceTeslaMode');
+    window.teslaAdapter.isTesla = false;
+    console.log('已禁用特斯拉模式');
+    
+    // 显示禁用提示
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #ff6b6b;
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        font-size: 18px;
+        font-weight: bold;
+        z-index: 10000;
+        box-shadow: 0 4px 20px rgba(255,107,107,0.3);
+    `;
+    notification.textContent = '特斯拉模式已禁用！';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
 };
 
 window.getTeslaStatus = () => window.teslaAdapter.getStatus();
+window.showTeslaDebug = () => window.teslaAdapter.showDebugInfo();
 window.toggleDriving = (driving) => window.teslaAdapter.toggleDrivingMode(driving);
+window.toggleDebugPanel = () => window.teslaAdapter.toggleDebugPanel();
+
+// 添加控制台命令提示
+window.showTeslaHelp = () => {
+    console.log(`
+🚗 特斯拉车机模式控制命令：
+
+• forceTeslaMode() - 强制启用特斯拉模式
+• disableTeslaMode() - 禁用特斯拉模式
+• getTeslaStatus() - 查看特斯拉模式状态
+• showTeslaDebug() - 显示详细调试信息
+• toggleDebugPanel() - 切换调试面板显示
+• toggleDriving(true/false) - 切换行车状态
+• showTeslaHelp() - 显示此帮助信息
+
+🎛️ 调试面板使用：
+• 双击屏幕右上角显示/隐藏调试面板
+• 面板显示实时状态信息
+• 可直接点击按钮启用/禁用模式
+
+如果视频无法播放，请尝试：
+1. 在控制台输入 forceTeslaMode()
+2. 或双击右上角打开调试面板点击"启用模式"
+3. 刷新页面
+4. 重新播放视频
+`);
+};
+
+// 自动显示帮助信息
+if (typeof window !== 'undefined') {
+    setTimeout(() => {
+        console.log('🚗 特斯拉车机适配已加载，输入 showTeslaHelp() 查看控制命令');
+    }, 1000);
+}
 
 // 在页面加载完成后自动启用
 document.addEventListener('DOMContentLoaded', () => {
     if (window.teslaAdapter.isTesla) {
         console.log('特斯拉车机模式已激活');
         
-        // 添加调试信息
-        const debugInfo = document.createElement('div');
-        debugInfo.id = 'tesla-debug';
-        debugInfo.style.cssText = `
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            z-index: 9999;
-            display: none;
-        `;
-        debugInfo.innerHTML = '特斯拉模式已启用';
-        document.body.appendChild(debugInfo);
+        // 创建调试信息面板
+        window.teslaAdapter.createDebugPanel();
         
-        // 双击显示调试信息
-        let clickCount = 0;
-        document.addEventListener('click', () => {
-            clickCount++;
-            setTimeout(() => {
-                if (clickCount === 2) {
-                    debugInfo.style.display = debugInfo.style.display === 'none' ? 'block' : 'none';
-                }
-                clickCount = 0;
-            }, 300);
-        });
+        // 定期更新状态
+        setInterval(() => {
+            window.teslaAdapter.updateDebugPanel();
+        }, 5000);
     }
 });

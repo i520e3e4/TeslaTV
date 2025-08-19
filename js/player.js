@@ -266,6 +266,9 @@ function initializePageContent() {
 
     // 添加键盘快捷键事件监听
     document.addEventListener('keydown', handleKeyboardShortcuts);
+    
+    // 初始化特斯拉模式按钮状态
+    updateTeslaToggleButton();
 
     // 添加页面离开事件监听，保存播放位置
     window.addEventListener('beforeunload', saveCurrentProgress);
@@ -546,11 +549,17 @@ function initPlayer(videoUrl) {
         return
     }
 
-    // 特斯拉车机适配检查
-    if (window.teslaAdapter && window.teslaAdapter.isTesla) {
-        console.log('特斯拉车机模式：优化视频播放设置');
+    // 特斯拉车机适配检查（支持手动强制模式）
+    const forceTeslaMode = localStorage.getItem('forceTeslaMode') === 'true';
+    const isTeslaDetected = window.teslaAdapter && window.teslaAdapter.isTesla;
+    const isTeslaMode = forceTeslaMode || isTeslaDetected;
+    
+    if (isTeslaMode) {
+        console.log('特斯拉车机模式：优化视频播放设置', { forceTeslaMode, isTeslaDetected });
         // 强制启用视频播放功能
-        window.teslaAdapter.forceEnableVideo();
+        if (window.teslaAdapter && window.teslaAdapter.forceEnableVideo) {
+            window.teslaAdapter.forceEnableVideo();
+        }
     }
 
     // 销毁旧实例
@@ -588,9 +597,8 @@ function initPlayer(videoUrl) {
         liveDurationInfinity: false
     };
 
-    // 特斯拉车机优化配置
-    const isTesla = window.teslaAdapter && window.teslaAdapter.isTesla;
-    const teslaConfig = isTesla ? {
+    // 特斯拉车机优化配置（支持手动强制模式）
+    const teslaConfig = isTeslaMode ? {
         volume: 1.0, // 特斯拉车机音量优化
         muted: false, // 确保不静音
         autoplay: true, // 强制自动播放
@@ -1975,5 +1983,50 @@ async function switchToResource(sourceKey, vodId) {
         showToast('切换资源失败，请稍后重试', 'error');
     } finally {
         hideLoading();
+    }
+}
+
+// 特斯拉模式相关函数
+function toggleTeslaMode() {
+    const currentMode = localStorage.getItem('forceTeslaMode') === 'true';
+    const newMode = !currentMode;
+    
+    localStorage.setItem('forceTeslaMode', newMode.toString());
+    updateTeslaToggleButton();
+    
+    // 重新初始化播放器以应用新的特斯拉模式设置
+    if (art && currentVideoUrl) {
+        const currentTime = art.currentTime;
+        initPlayer(currentVideoUrl);
+        
+        // 恢复播放位置
+        setTimeout(() => {
+            if (art) {
+                art.currentTime = currentTime;
+            }
+        }, 1000);
+    }
+    
+    showMessage(newMode ? '已启用特斯拉模式' : '已关闭特斯拉模式');
+}
+
+function updateTeslaToggleButton() {
+    const button = document.getElementById('teslaToggle');
+    const text = document.getElementById('teslaToggleText');
+    
+    if (!button || !text) return;
+    
+    const isTeslaMode = localStorage.getItem('forceTeslaMode') === 'true';
+    
+    if (isTeslaMode) {
+        button.classList.add('bg-[#00ccff]', 'text-black');
+        button.classList.remove('bg-[#222]');
+        text.textContent = '特斯拉✓';
+        button.title = '特斯拉车机模式已启用，点击关闭';
+    } else {
+        button.classList.remove('bg-[#00ccff]', 'text-black');
+        button.classList.add('bg-[#222]');
+        text.textContent = '特斯拉';
+        button.title = '点击启用特斯拉车机模式';
     }
 }
